@@ -34,13 +34,13 @@ public class PlayerTimeActionRunner implements Listener {
         for (NewbiePlayer newbiePlayer : onlineNewbiePlayers) {
             Player player = Bukkit.getPlayer(newbiePlayer.getUuid());
             if (player == null) continue; //player is offline
-            long totalTimePlayed = newbiePlayer.getTotalTimePlayed();
+            long totalTimePlayed = newbiePlayer.getLastCheckedPlaytime() + 1;
             long lastChecked = newbiePlayer.getLastCheckedPlaytime();
             for (Map.Entry<Integer, List<Action>> entry : actionsMap.entrySet()) {
                 int requiredTime = entry.getKey();
                 if (lastChecked < requiredTime && totalTimePlayed >= requiredTime) {
                     for (Action action : entry.getValue()) {
-                        action.execute(newbiePlayer,player);
+                        action.execute(newbiePlayer, player);
                     }
                 }
             }
@@ -64,7 +64,6 @@ public class PlayerTimeActionRunner implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         if (!event.getPlayer().hasPlayedBefore()) {
             NewbiePlayer newbiePlayer = new NewbiePlayer(event.getPlayer().getUniqueId());
-            newbiePlayer.setTimePlayedAtLastSync(-1);
             newbiePlayer.setLastCheckedPlaytime(-1);
             onlineNewbiePlayers.add(newbiePlayer);
         }
@@ -74,7 +73,6 @@ public class PlayerTimeActionRunner implements Listener {
     public void resetPlayer(UUID uuid) {
         onlineNewbiePlayers.removeIf(p -> p.getUuid().equals(uuid));
         NewbiePlayer newbiePlayer = new NewbiePlayer(uuid);
-        newbiePlayer.setTimePlayedAtLastSync(-1);
         newbiePlayer.setLastCheckedPlaytime(-1);
         onlineNewbiePlayers.add(newbiePlayer);
     }

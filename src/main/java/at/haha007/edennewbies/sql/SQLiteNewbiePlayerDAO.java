@@ -32,7 +32,7 @@ public class SQLiteNewbiePlayerDAO implements NewbiePlayerDAO {
                     stmt.executeUpdate("""
                             CREATE TABLE IF NOT EXISTS newbie_players (
                                 uuid TEXT PRIMARY KEY,
-                                time_played_at_last_sync INTEGER
+                                play_time INTEGER
                             );
                             """);
                 }
@@ -44,7 +44,7 @@ public class SQLiteNewbiePlayerDAO implements NewbiePlayerDAO {
 
     @Override
     public Optional<NewbiePlayer> getByUUID(UUID uuid) {
-        String sql = "SELECT uuid, time_played_at_last_sync FROM newbie_players WHERE uuid = ?";
+        String sql = "SELECT uuid, play_time FROM newbie_players WHERE uuid = ?";
         try (Connection conn = DriverManager.getConnection(jdbcUrl);
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, uuid.toString());
@@ -62,12 +62,12 @@ public class SQLiteNewbiePlayerDAO implements NewbiePlayerDAO {
 
     @Override
     public void saveOrUpdate(NewbiePlayer player) {
-        String sql = "INSERT INTO newbie_players(uuid, time_played_at_last_sync) VALUES(?,?)"
-                + " ON CONFLICT(uuid) DO UPDATE SET time_played_at_last_sync=excluded.time_played_at_last_sync;";
+        String sql = "INSERT INTO newbie_players(uuid, play_time) VALUES(?,?)"
+                + " ON CONFLICT(uuid) DO UPDATE SET play_time=excluded.play_time;";
         try (Connection conn = DriverManager.getConnection(jdbcUrl);
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, player.getUuid().toString());
-            ps.setLong(2, player.getTimePlayedAtLastSync());
+            ps.setLong(2, player.getLastCheckedPlaytime());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new DAOException("Failed to saveOrUpdate player", e);
@@ -89,7 +89,7 @@ public class SQLiteNewbiePlayerDAO implements NewbiePlayerDAO {
 
     @Override
     public List<NewbiePlayer> listAll() {
-        String sql = "SELECT uuid, time_played_at_last_sync FROM newbie_players";
+        String sql = "SELECT uuid, play_time FROM newbie_players";
         List<NewbiePlayer> list = new ArrayList<>();
         try (Connection conn = DriverManager.getConnection(jdbcUrl);
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -106,7 +106,7 @@ public class SQLiteNewbiePlayerDAO implements NewbiePlayerDAO {
     private NewbiePlayer mapRow(ResultSet rs) throws SQLException {
         UUID uuid = UUID.fromString(rs.getString("uuid"));
         NewbiePlayer p = new NewbiePlayer(uuid);
-        p.setTimePlayedAtLastSync(rs.getLong("time_played_at_last_sync"));
+        p.setLastCheckedPlaytime(rs.getLong("play_time"));
         return p;
     }
 }

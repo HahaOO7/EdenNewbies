@@ -8,12 +8,10 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class ActionFactory {
 
@@ -31,10 +29,16 @@ public class ActionFactory {
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException("Invalid delay key: " + delayStr);
             }
-            List<ConfigurationSection> actionConfigs = config.getMapList(delayStr).stream()
-                    .map(ConfigurationSection.class::cast)
-                    .toList();
-            List<Action> actions = createActionsFromConfig(actionConfigs);
+            List<ConfigurationSection> actionsConfigs = new ArrayList<>();
+            for (Map<?, ?> map : config.getMapList(delayStr)) {
+                YamlConfiguration tempConfig = new YamlConfiguration();
+                for (Map.Entry<?, ?> entry : map.entrySet()) {
+                    tempConfig.set(entry.getKey().toString(), entry.getValue());
+                }
+                actionsConfigs.add(tempConfig);
+            }
+
+            List<Action> actions = createActionsFromConfig(actionsConfigs);
             actionsMap.put(delay, actions);
         }
         return actionsMap;
@@ -49,7 +53,7 @@ public class ActionFactory {
     public static Action createFromConfig(ConfigurationSection config) {
         String type = config.getString("action");
         switch (type) {
-            case "send-message":
+            case "message":
                 String message = config.getString("message");
                 if (message == null) {
                     throw new IllegalArgumentException("Missing 'message' for send-message action");
@@ -85,6 +89,7 @@ public class ActionFactory {
                     throw new IllegalArgumentException("Missing 'command' for server_command action");
                 }
                 return createServerCommandAction(command);
+            case null:
             default:
                 throw new IllegalArgumentException("Unknown action type: " + type);
         }
@@ -108,8 +113,10 @@ public class ActionFactory {
                     Duration.ofMillis((long) (staySeconds * 1000)),
                     Duration.ofMillis((long) (fadeOutSeconds * 1000))
             );
-            Component titleComponent = MiniMessage.miniMessage().deserialize(title);
-            Component subtitleComponent = MiniMessage.miniMessage().deserialize(subtitle);
+            String playerTitleString = PlaceholderAPI.setPlaceholders(player, title);
+            String playerSubtitleString = PlaceholderAPI.setPlaceholders(player, subtitle);
+            Component titleComponent = MiniMessage.miniMessage().deserialize(playerTitleString);
+            Component subtitleComponent = MiniMessage.miniMessage().deserialize(playerSubtitleString);
             Title adventureTitle = Title.title(titleComponent, subtitleComponent, times);
             player.showTitle(adventureTitle);
         };

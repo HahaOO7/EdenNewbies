@@ -1,12 +1,15 @@
 package at.haha007.edennewbies;
 
 import at.haha007.edennewbies.sql.SQLiteNewbiePlayerDAO;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
-import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -53,8 +56,8 @@ public final class EdenNewbiesPlugin extends JavaPlugin {
 
     private void registerCommands(ReloadableRegistrarEvent<Commands> commands) {
         //reload command
-        String rootCommand = "edennewbies";
-        commands.registrar().register(literal(rootCommand).then(literal("reload").executes(c -> {
+        LiteralArgumentBuilder<CommandSourceStack> rootCommand = literal("edennewbies");
+        rootCommand.then(literal("reload").executes(c -> {
             CommandSender sender = c.getSource().getSender();
             if (!sender.hasPermission("edennewbies.reload")) {
                 sender.sendMessage(Component.text(PERMISSION_MESSAGE, NamedTextColor.RED));
@@ -65,10 +68,10 @@ public final class EdenNewbiesPlugin extends JavaPlugin {
             playerTimeActionRunner.setActionsMap(actions);
             sender.sendMessage(Component.text("EdenNewbies configuration reloaded.", NamedTextColor.GREEN));
             return 0;
-        })).build());
+        }));
 
         //reset command, which resets the player's newbie status
-        commands.registrar().register(literal(rootCommand).then(literal("reset").executes(c -> {
+        rootCommand.then(literal("reset").executes(c -> {
             CommandSender sender = c.getSource().getSender();
             if (!sender.hasPermission("edennewbies.reset")) {
                 sender.sendMessage(Component.text(PERMISSION_MESSAGE, NamedTextColor.RED));
@@ -81,10 +84,10 @@ public final class EdenNewbiesPlugin extends JavaPlugin {
             playerTimeActionRunner.resetPlayer(player.getUniqueId());
             sender.sendMessage(Component.text("Your newbie status has been reset.", NamedTextColor.GREEN));
             return 0;
-        })).build());
+        }));
 
         //test command to test actions
-        commands.registrar().register(literal(rootCommand).then(literal("test").then(argument("delay", ArgumentTypes.integerRange())
+        rootCommand.then(literal("test").then(argument("delay", IntegerArgumentType.integer())
                 .suggests((ctx, builder) -> {
                     for (Integer delay : actions.keySet()) {
                         builder.suggest(delay.toString());
@@ -101,7 +104,7 @@ public final class EdenNewbiesPlugin extends JavaPlugin {
                         sender.sendMessage(Component.text("Only players can use this command.", NamedTextColor.RED));
                         return 1;
                     }
-                    int delay = c.getArgument("delay", Integer.class);
+                    int delay = c.getArgument("delay", int.class);
                     List<Action> actionList = actions.get(delay);
                     if (actionList == null || actionList.isEmpty()) {
                         sender.sendMessage(Component.text("No actions found for delay: " + delay, NamedTextColor.RED));
@@ -111,11 +114,13 @@ public final class EdenNewbiesPlugin extends JavaPlugin {
                     for (Action action : actionList) {
                         action.execute(tempNewbiePlayer, player);
                     }
-                    sender.sendMessage(Component.text("Executed test actions for delay: " + delay, NamedTextColor.GREEN));
+                    Bukkit.getScheduler().runTask(this, () ->
+                            sender.sendMessage(Component.text("Executed test actions for delay: " + delay, NamedTextColor.GREEN)));
                     return 0;
                 })
-        )).build());
+        ));
 
+        commands.registrar().register(rootCommand.build());
     }
 
     @Override
