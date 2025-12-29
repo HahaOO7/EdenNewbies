@@ -1,0 +1,19 @@
+#delay in seconds of playtime before executing actions
+5: #seconds after player joins
+  actions:
+    - action: "message" #sends a message with PlaceholderAPI support
+      message: "<red>Welcome to the server %player_name%!"
+    - action: "sound" #plays a sound to the player
+      sound: "entity.player.levelup"
+      volume: 1.0
+      pitch: 1.0
+    - action: "title" #sends a title and subtitle to the player
+      title: "<red>Welcome %player_name%!"
+      subtitle: "<red>Have fun exploring!"
+      fade_in: 0.5 #Seconds
+      stay: 1
+      fade_out: 0.5
+    - action: "actionbar" #creates a bossbar for the player
+      message: "<red>Newbie Zone"
+    - action: "server_command" #command executed by the server
+      command: "tellraw %player_name% {\"text\":\"Enjoy your stay!\",\"color\":\"green\"}"
