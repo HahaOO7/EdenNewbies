@@ -21,6 +21,7 @@ public class PlayerTimeActionRunner implements Listener {
     public PlayerTimeActionRunner(EdenNewbiesPlugin plugin, Map<Integer, List<Action>> actionsMap) {
         this.playerDAO = plugin.getNewbieDao();
         this.actionsMap = actionsMap;
+        Bukkit.getPluginManager().registerEvents(this, plugin);
         //schedule task to run every second
         Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, this::run, 20L, 20L);
         //schedule save task every 5 minutes
